@@ -1,6 +1,8 @@
 using Moq;
 using HotelBooking.Core;
 
+
+namespace HotelBooking.Core.Tests;
 public class BookingManagerTests
 {
     private readonly Mock<IRepository<Booking>> mockBookingRepo;
@@ -35,7 +37,7 @@ public class BookingManagerTests
 
         mockRoomRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(rooms);
         mockBookingRepo.Setup(b => b.GetAllAsync()).ReturnsAsync(bookings);
-
+        
         // Act (Call method)
         var roomId = await bookingManager.FindAvailableRoom(DateTime.Today.AddDays(3), DateTime.Today.AddDays(4));
         
