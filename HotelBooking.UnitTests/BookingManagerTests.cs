@@ -142,6 +142,80 @@ namespace HotelBooking.UnitTests
             Assert.Empty(bookingForReturnedRoomId);
         }
         
+        // Test #4 - Booking starts before a booked period and ends after
+        [Fact] 
+        public async Task FindAvailableRoom_BookingThroughWholeBookedPeriod_ReturnsRoomIdMinusOne()
+        {
+            // Arrange
+            DateTime startDate = DateTime.Today.AddDays(8);
+            DateTime endDate = DateTime.Today.AddDays(22);
+
+            // Act
+            int roomId = await bookingManager.FindAvailableRoom(startDate, endDate);
+
+            // Assert
+            Assert.Equal(-1, roomId);
+        }
+        
+        // Test #5 - Booking starts after a booked period and ends after too
+        [Fact] 
+        public async Task FindAvailableRoom_BookingAfterBookedPeriod_ReturnsRoomIdMinusOne()
+        {
+            // Arrange
+            DateTime startDate = DateTime.Today.AddDays(22);
+            DateTime endDate = DateTime.Today.AddDays(24);
+            // Act
+            int roomId = await bookingManager.FindAvailableRoom(startDate, endDate);
+
+            // Assert
+            Assert.NotEqual(-1, roomId);
+        }
+        
+        // Test #6 - Booking overlaps the beginning of a booked period
+        [Fact] 
+        public async Task FindAvailableRoom_BookingOverlapsBeginningBookedPeriod_ReturnsRoomIdMinusOne()
+        {
+            // Arrange
+            DateTime startDate = DateTime.Today.AddDays(8);
+            DateTime endDate = DateTime.Today.AddDays(12);
+
+            // Act
+            int roomId = await bookingManager.FindAvailableRoom(startDate, endDate);
+
+            // Assert
+            Assert.Equal(-1, roomId);
+        }
+        
+        // Test #7 - Booking starts in the middle of a booked period and ends the same
+        [Fact] 
+        public async Task FindAvailableRoom_BookingInsideBookedPeriod_ReturnsRoomIdMinusOne()
+        {
+            // Arrange
+            DateTime startDate = DateTime.Today.AddDays(12);
+            DateTime endDate = DateTime.Today.AddDays(14);
+
+            // Act
+            int roomId = await bookingManager.FindAvailableRoom(startDate, endDate);
+
+            // Assert
+            Assert.Equal(-1, roomId);
+        }
+        
+        // Test #8 - Booking starts in the middle of a booked period and ends after
+        [Fact] 
+        public async Task FindAvailableRoom_BookingCrossesEndOfBookedPeriod_ReturnsRoomIdMinusOne()
+        {
+            // Arrange
+            DateTime startDate = DateTime.Today.AddDays(18);
+            DateTime endDate = DateTime.Today.AddDays(22);
+
+            // Act
+            int roomId = await bookingManager.FindAvailableRoom(startDate, endDate);
+
+            // Assert
+            Assert.Equal(-1, roomId);
+        }
+        
         [Fact]
         public async Task FindAvailableRoom_ShouldReturnRoomId_WhenRoomIsAvailable()
         {
