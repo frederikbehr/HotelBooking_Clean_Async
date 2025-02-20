@@ -20,10 +20,12 @@ public class BookingManagerTests
     private readonly Mock<IRepository<Room>> mockRoomRepo;
     private readonly BookingManager mockedBookingManager;
     private readonly ITestOutputHelper output;
-        
-    public BookingManagerTests(ITestOutputHelper output) {
-        DateTime start = DateTime.Today.AddDays(10);
-        DateTime end = DateTime.Today.AddDays(20);
+    
+    public BookingManagerTests()
+    {
+        DateTime today = DateTime.Today;
+        DateTime start = today.AddDays(10);
+        DateTime end = today.AddDays(20);
         bookingRepository = new FakeBookingRepository(start, end);
         IRepository<Room> roomRepository = new FakeRoomRepository();
         bookingManager = new BookingManager(bookingRepository, roomRepository);
@@ -34,6 +36,42 @@ public class BookingManagerTests
             
         // Inject mocks into BookingManager
         mockedBookingManager = new BookingManager(mockBookingRepo.Object, mockRoomRepo.Object);
+    }
+    
+    public static IEnumerable<object[]> GetBookingTestCases()
+    {
+        var today = DateTime.Today;
+        
+        // Test: 3 - later than today, earlier than booked period
+        yield return new object[] {today.AddDays(3), today.AddDays(4), -1, false};
+        yield return new object[] {today.AddDays(2), today.AddDays(2), -1, false};
+        yield return new object[] {today.AddDays(2), today.AddDays(9), -1, false};
+        
+        // Test: 4 - from before booked period till after booked period
+        yield return new object[] {today.AddDays(7), today.AddDays(23), -1, true};
+        yield return new object[] {today.AddDays(9), today.AddDays(21), -1, true};
+        yield return new object[] {today.AddDays(9), today.AddDays(21), -1, true};
+        yield return new object[] {today.AddDays(2), today.AddDays(50), -1, true};
+        
+        // Test: 5 - period after booked period
+        yield return new object[] {today.AddDays(21), today.AddDays(30), -1, false};
+        yield return new object[] {today.AddDays(30), today.AddDays(40), -1, false};
+        
+        // Test: 6 - from before booked period till middle of booked period
+        yield return new object[] {today.AddDays(8), today.AddDays(15), -1, true};
+        yield return new object[] {today.AddDays(9), today.AddDays(11), -1, true};
+        yield return new object[] {today.AddDays(5), today.AddDays(19), -1, true};
+        
+        // Test: 7 - between start and end of booked period
+        yield return new object[] {today.AddDays(11), today.AddDays(15), -1, true};
+        yield return new object[] {today.AddDays(11), today.AddDays(11), -1, true};
+        yield return new object[] {today.AddDays(18), today.AddDays(19), -1, true};
+        
+        // Test: 8 - between start and end of booked period
+        yield return new object[] {today.AddDays(19), today.AddDays(21), -1, true};
+        yield return new object[] {today.AddDays(19), today.AddDays(22), -1, true};
+        yield return new object[] {today.AddDays(15), today.AddDays(23), -1, true};
+        
     }
 
     // Same day booking test
@@ -79,195 +117,25 @@ public class BookingManagerTests
         // Assert
         await Assert.ThrowsAsync<ArgumentException>(result);
     }
-
-    // Find booking for tomorrow only
-    [Fact]
-    public async Task FindAvailableRoom_RoomAvailable_RoomIdNotMinusOne()
-    {
-        // Arrange
-        DateTime date = DateTime.Today.AddDays(1);
-        // Act
-        int roomId = await bookingManager.FindAvailableRoom(date, date);
-        // Assert
-        Assert.NotEqual(-1, roomId);
-    }
-        
-    // Test #3 - from future date till even more future date
-    [Fact]
-    public async Task FindAvailableRoom_BookedInFuture_ReturnsAvailableRoom()
-    {
-        // This test was added to satisfy the following test design
-        // principle: "Tests should have strong assertions".
-
-        // Arrange
-        DateTime startDate = DateTime.Today.AddDays(2);
-        DateTime endDate = DateTime.Today.AddDays(4);
-            
-        // Act
-        int roomId = await bookingManager.FindAvailableRoom(startDate, endDate);
-            
-        var bookingForReturnedRoomId = (await bookingRepository.GetAllAsync()).
-            Where(b => b.RoomId == roomId
-                       && b.StartDate <= startDate
-                       && b.EndDate >= endDate
-                       && b.IsActive);
-
-        // bookings are checked to see if any bookings exist for the room id we get.
-        // We assert, that there are no bookings for the given room and time.
-        // Assert
-        Assert.Empty(bookingForReturnedRoomId);
-    }
-
-    [Fact]
-    public async Task FindAvailableRoom_RoomAvailable_ReturnsAvailableRoom()
-    {
-        // This test was added to satisfy the following test design
-        // principle: "Tests should have strong assertions".
-
-        // Arrange
-        DateTime date = DateTime.Today.AddDays(1);
-            
-        // Act
-        int roomId = await bookingManager.FindAvailableRoom(date, date);
-            
-        var bookingForReturnedRoomId = (await bookingRepository.GetAllAsync()).
-            Where(b => b.RoomId == roomId
-                       && b.StartDate <= date
-                       && b.EndDate >= date
-                       && b.IsActive);
-
-        // bookings are checked to see if any bookings exist for the room id we get.
-        // We assert, that there are no bookings for the given room and time.
-        // Assert
-        Assert.Empty(bookingForReturnedRoomId);
-    }
-        
-    // Test #4 - Booking starts before a booked period and ends after
-    [Fact] 
-    public async Task FindAvailableRoom_BookingThroughWholeBookedPeriod_ReturnsRoomIdMinusOne()
-    {
-        // Arrange
-        DateTime startDate = DateTime.Today.AddDays(8);
-        DateTime endDate = DateTime.Today.AddDays(22);
-
-        // Act
-        int roomId = await bookingManager.FindAvailableRoom(startDate, endDate);
-
-        // Assert
-        Assert.Equal(-1, roomId);
-    }
-        
-    // Test #5 - Booking starts after a booked period and ends after too
-    [Fact] 
-    public async Task FindAvailableRoom_BookingAfterBookedPeriod_ReturnsRoomIdMinusOne()
-    {
-        // Arrange
-        DateTime startDate = DateTime.Today.AddDays(22);
-        DateTime endDate = DateTime.Today.AddDays(24);
-        // Act
-        int roomId = await bookingManager.FindAvailableRoom(startDate, endDate);
-
-        // Assert
-        Assert.NotEqual(-1, roomId);
-    }
-        
-    // Test #6 - Booking overlaps the beginning of a booked period
-    [Fact] 
-    public async Task FindAvailableRoom_BookingOverlapsBeginningBookedPeriod_ReturnsRoomIdMinusOne()
-    {
-        // Arrange
-        DateTime startDate = DateTime.Today.AddDays(8);
-        DateTime endDate = DateTime.Today.AddDays(12);
-
-        // Act
-        int roomId = await bookingManager.FindAvailableRoom(startDate, endDate);
-
-        // Assert
-        Assert.Equal(-1, roomId);
-    }
-        
-    // Test #7 - Booking starts in the middle of a booked period and ends the same
-    [Fact] 
-    public async Task FindAvailableRoom_BookingInsideBookedPeriod_ReturnsRoomIdMinusOne()
-    {
-        // Arrange
-        DateTime startDate = DateTime.Today.AddDays(12);
-        DateTime endDate = DateTime.Today.AddDays(14);
-
-        // Act
-        int roomId = await bookingManager.FindAvailableRoom(startDate, endDate);
-
-        // Assert
-        Assert.Equal(-1, roomId);
-    }
-        
-    // Test #8 - Booking starts in the middle of a booked period and ends after
-    [Fact] 
-    public async Task FindAvailableRoom_BookingCrossesEndOfBookedPeriod_ReturnsRoomIdMinusOne()
-    {
-        // Arrange
-        DateTime startDate = DateTime.Today.AddDays(18);
-        DateTime endDate = DateTime.Today.AddDays(22);
-
-        // Act
-        int roomId = await bookingManager.FindAvailableRoom(startDate, endDate);
-
-        // Assert
-        Assert.Equal(-1, roomId);
-    }
-        
-    [Fact]
-    public async Task FindAvailableRoom_ShouldReturnRoomId_WhenRoomIsAvailable()
-    {
-        // Defining rooms for setup
-        var rooms = new List<Room>
-        {
-            new Room { Id = 1 }, 
-            new Room { Id = 2 },
-        };
-        
-        // Defining bookings for setup
-        var bookings = new List<Booking>
-        {
-            new Booking { RoomId = 1, StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(2), IsActive = true }
-        };
-
-        mockRoomRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(rooms);
-        mockBookingRepo.Setup(b => b.GetAllAsync()).ReturnsAsync(bookings);
-        
-        // Act (Call method)
-        var roomId = await mockedBookingManager.FindAvailableRoom(DateTime.Today.AddDays(3), DateTime.Today.AddDays(4));
-        
-        // Assert (Check result)
-        Assert.True(roomId != -1, "Expected an available room ID");
-    }
     
-    [Fact]
-    public async Task FindAvailableRoom_ShouldReturnMinusOne_WhenNoRoomIsAvailable()
+    // Test #3-8 - Booking starts after today where there is a booked period from +10 days to +20 days
+    [Theory]
+    [MemberData(nameof(GetBookingTestCases))]
+    public async Task FindAvailableRoom_BookingLaterThanTodayWithBookedPeriod_ReturnsExpectedRoomId(DateTime startDate, DateTime endDate, int expectedResult, bool equals)
     {
-        // Defining rooms for setup
-        var rooms = new List<Room>
-        {
-            new Room { Id = 1 }, 
-        };
-        
-        // Defining bookings for setup
-        var bookings = new List<Booking>
-        {
-            new Booking { RoomId = 1, StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(2), IsActive = true }
-        };
+        // Act
+        int roomId = await bookingManager.FindAvailableRoom(startDate, endDate);
 
-        mockRoomRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(rooms);
-        mockBookingRepo.Setup(b => b.GetAllAsync()).ReturnsAsync(bookings);
-
-        // Act (Call method)
-        var roomId = await mockedBookingManager.FindAvailableRoom(DateTime.Today.AddDays(2), DateTime.Today.AddDays(4));
-        
-        // Assert (Check result)
-        Assert.True(roomId == -1, "Expected an available room ID");
+        // Assert
+        if (equals)
+        {
+            Assert.Equal(expectedResult, roomId);   
+        }
+        else
+        {
+            Assert.NotEqual(expectedResult, roomId);
+        }
     }
-        
-    // XXXXXXXXXXXXXXXXX
         
         
 
