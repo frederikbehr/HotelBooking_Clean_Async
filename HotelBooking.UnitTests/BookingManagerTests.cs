@@ -3,42 +3,25 @@ using System.Collections.Generic;
 using HotelBooking.Core;
 using HotelBooking.UnitTests.Fakes;
 using Xunit;
-using System.Linq;
 using System.Threading.Tasks;
-using Moq;
-using Xunit.Abstractions;
-using Xunit.Sdk;
-
 
 namespace HotelBooking.UnitTests;
 
 public class BookingManagerTests
 {
     private readonly IBookingManager bookingManager;
-    readonly IRepository<Booking> bookingRepository;
-    private readonly Mock<IRepository<Booking>> mockBookingRepo;
-    private readonly Mock<IRepository<Room>> mockRoomRepo;
-    private readonly BookingManager mockedBookingManager;
-    private readonly ITestOutputHelper output;
     
     public BookingManagerTests()
     {
-        DateTime today = DateTime.Today;
-        DateTime start = today.AddDays(10);
-        DateTime end = today.AddDays(20);
-        bookingRepository = new FakeBookingRepository(start, end);
+        var today = DateTime.Today;
+        var bookedPeriodStart = today.AddDays(10);
+        var bookedPeriodEnd = today.AddDays(20);
+        IRepository<Booking> bookingRepository1 = new FakeBookingRepository(bookedPeriodStart, bookedPeriodEnd);
         IRepository<Room> roomRepository = new FakeRoomRepository();
-        bookingManager = new BookingManager(bookingRepository, roomRepository);
-        this.output = output;
-        // Create mock repositories
-        mockBookingRepo = new Mock<IRepository<Booking>>();
-        mockRoomRepo = new Mock<IRepository<Room>>();
-            
-        // Inject mocks into BookingManager
-        mockedBookingManager = new BookingManager(mockBookingRepo.Object, mockRoomRepo.Object);
+        bookingManager = new BookingManager(bookingRepository1, roomRepository);
     }
     
-    public static IEnumerable<object[]> GetBookingTestCases()
+    public static IEnumerable<object[]> GetBookingTestCasesFindingAvailableRoom()
     {
         var today = DateTime.Today;
         
@@ -120,7 +103,7 @@ public class BookingManagerTests
     
     // Test #3-8 - Booking starts after today where there is a booked period from +10 days to +20 days
     [Theory]
-    [MemberData(nameof(GetBookingTestCases))]
+    [MemberData(nameof(GetBookingTestCasesFindingAvailableRoom))]
     public async Task FindAvailableRoom_BookingLaterThanTodayWithBookedPeriod_ReturnsExpectedRoomId(DateTime startDate, DateTime endDate, int expectedResult, bool equals)
     {
         // Act
