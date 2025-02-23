@@ -26,35 +26,34 @@ public class BookingManagerTests
         var today = DateTime.Today;
         
         // Test: 3 - later than today, earlier than booked period
-        yield return new object[] {today.AddDays(3), today.AddDays(4), -1, false};
-        yield return new object[] {today.AddDays(2), today.AddDays(2), -1, false};
-        yield return new object[] {today.AddDays(2), today.AddDays(9), -1, false};
+        yield return [today.AddDays(3), today.AddDays(4), -1, false];
+        yield return [today.AddDays(2), today.AddDays(2), -1, false];
+        yield return [today.AddDays(2), today.AddDays(9), -1, false];
         
         // Test: 4 - from before booked period till after booked period
-        yield return new object[] {today.AddDays(7), today.AddDays(23), -1, true};
-        yield return new object[] {today.AddDays(9), today.AddDays(21), -1, true};
-        yield return new object[] {today.AddDays(9), today.AddDays(21), -1, true};
-        yield return new object[] {today.AddDays(2), today.AddDays(50), -1, true};
+        yield return [today.AddDays(7), today.AddDays(23), -1, true];
+        yield return [today.AddDays(9), today.AddDays(21), -1, true];
+        yield return [today.AddDays(9), today.AddDays(21), -1, true];
+        yield return [today.AddDays(2), today.AddDays(50), -1, true];
         
         // Test: 5 - period after booked period
-        yield return new object[] {today.AddDays(21), today.AddDays(30), -1, false};
-        yield return new object[] {today.AddDays(30), today.AddDays(40), -1, false};
+        yield return [today.AddDays(21), today.AddDays(30), -1, false];
+        yield return [today.AddDays(30), today.AddDays(40), -1, false];
         
         // Test: 6 - from before booked period till middle of booked period
-        yield return new object[] {today.AddDays(8), today.AddDays(15), -1, true};
-        yield return new object[] {today.AddDays(9), today.AddDays(11), -1, true};
-        yield return new object[] {today.AddDays(5), today.AddDays(19), -1, true};
+        yield return [today.AddDays(8), today.AddDays(15), -1, true];
+        yield return [today.AddDays(9), today.AddDays(11), -1, true];
+        yield return [today.AddDays(5), today.AddDays(19), -1, true];
         
         // Test: 7 - between start and end of booked period
-        yield return new object[] {today.AddDays(11), today.AddDays(15), -1, true};
-        yield return new object[] {today.AddDays(11), today.AddDays(11), -1, true};
-        yield return new object[] {today.AddDays(18), today.AddDays(19), -1, true};
+        yield return [today.AddDays(11), today.AddDays(15), -1, true];
+        yield return [today.AddDays(11), today.AddDays(11), -1, true];
+        yield return [today.AddDays(18), today.AddDays(19), -1, true];
         
         // Test: 8 - between start and end of booked period
-        yield return new object[] {today.AddDays(19), today.AddDays(21), -1, true};
-        yield return new object[] {today.AddDays(19), today.AddDays(22), -1, true};
-        yield return new object[] {today.AddDays(15), today.AddDays(23), -1, true};
-        
+        yield return [today.AddDays(19), today.AddDays(21), -1, true];
+        yield return [today.AddDays(19), today.AddDays(22), -1, true];
+        yield return [today.AddDays(15), today.AddDays(23), -1, true];
     }
 
     // Same day booking test
@@ -104,7 +103,11 @@ public class BookingManagerTests
     // Test #3-8 - Booking starts after today where there is a booked period from +10 days to +20 days
     [Theory]
     [MemberData(nameof(GetBookingTestCasesFindingAvailableRoom))]
-    public async Task FindAvailableRoom_BookingLaterThanTodayWithBookedPeriod_ReturnsExpectedRoomId(DateTime startDate, DateTime endDate, int expectedResult, bool equals)
+    public async Task FindAvailableRoom_BookingLaterThanTodayWithBookedPeriod_ReturnsExpectedRoomId(
+        DateTime startDate, 
+        DateTime endDate, 
+        int expectedResult, 
+        bool equals)
     {
         // Act
         int roomId = await bookingManager.FindAvailableRoom(startDate, endDate);
