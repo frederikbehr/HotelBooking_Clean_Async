@@ -10,7 +10,7 @@ namespace HotelBooking.UnitTests;
 
 public class BookingManagerTests
 {
-    private readonly IBookingManager bookingManager;
+    private readonly BookingManager bookingManager;
 
     public BookingManagerTests()
     {
