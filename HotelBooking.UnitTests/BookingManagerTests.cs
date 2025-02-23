@@ -11,20 +11,17 @@ namespace HotelBooking.UnitTests;
 public class BookingManagerTests
 {
     private readonly IBookingManager bookingManager;
-    
-    private readonly Mock<IRepository<Booking>> bookingRepoMock;
-    private readonly Mock<IRepository<Room>> roomRepoMock;
-    
+
     public BookingManagerTests()
     {
         var today = DateTime.Today;
         var bookedPeriodStart = today.AddDays(10);
         var bookedPeriodEnd = today.AddDays(20);
-        
+
         // Create mocks
-        bookingRepoMock = new Mock<IRepository<Booking>>();
+        var bookingRepoMock1 = new Mock<IRepository<Booking>>();
         
-        bookingRepoMock.Setup(repo => repo.GetAllAsync()).ReturnsAsync(new List<Booking>
+        bookingRepoMock1.Setup(repo => repo.GetAllAsync()).ReturnsAsync(new List<Booking>
         {
             new Booking { Id=1, StartDate=DateTime.Today.AddDays(1), EndDate=DateTime.Today.AddDays(1), IsActive=true, CustomerId=1, RoomId=1 },
             new Booking { Id=1, StartDate=bookedPeriodStart, EndDate=bookedPeriodEnd, IsActive=true, CustomerId=1, RoomId=1 },
@@ -32,7 +29,7 @@ public class BookingManagerTests
         });
         
         IRepository<Room> roomRepository = new FakeRoomRepository();
-        bookingManager = new BookingManager(bookingRepoMock.Object, roomRepository);
+        bookingManager = new BookingManager(bookingRepoMock1.Object, roomRepository);
     }
     
     public static IEnumerable<object[]> GetBookingTestCasesFindingAvailableRoom()
